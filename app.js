@@ -8,19 +8,30 @@ const content = document.createElement('div');
 const NEWS_URL = 'https://api.hnpwa.com/v0/news/1.json';
 const CONTENT_URL = 'https://api.hnpwa.com/v0/item/@id.json';
 const store = {
-  currentPage : 1,
+  currentPage: 1,
+  feeds: [],
 }; 
 
+// getData : ajax로 API URL 가져오기.
 function getData(url) {
   ajax.open('GET', url, false); 
   ajax.send();
   return JSON.parse(ajax.response);
 }
 
+// 읽음표시 만드는 함수
+function makeFeeds(feeds) {
+  for (let i = 0; i < feeds.length; i++) {
+    feeds[i].read = false;
+  }
+
+  return feeds;
+}
+
 // newsFeed함수 : API URL를 가져와 글 목록을 보여주는 함수.
 // 배열에 ul,li태그를 넣고 join으로 문자열로 바꾸는 방식을 사용.
 function newsFeed() {
-  const newsFeed = getData(NEWS_URL);
+  let newsFeed = store.feeds;
   const newsList = [];
   let template = `
     <div class="bg-gray-600 min-h-screen">
@@ -29,7 +40,7 @@ function newsFeed() {
           <div class="flex justify-between items-center py-6">
             <div class="flex justify-start">
               <h1 class="font-extrabold">
-                Hacker News
+                <a href="/">Hacker News</a>
               </h1>
             </div>
             <div class="items-center justify-end">
@@ -49,22 +60,24 @@ function newsFeed() {
     </div>
   `;
 
+  if (newsFeed.length === 0) {
+    newsFeed = store.feeds = makeFeeds(getData(NEWS_URL)); // 두번에 걸쳐 할당하는 것.
+  }
+
   for (let i = (store.currentPage - 1) * 10; i<store.currentPage * 10; i++) {
     newsList.push(`
-      <div class="p-6 bg-white mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100">
+      <div class="p-6 ${newsFeed[i].read ? 'bg-blue-300' : 'bg-white'} mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100">
         <div class="flex">
           <div class="flex-auto">
             <a href="#/show/${newsFeed[i].id}">${newsFeed[i].title}</a>  
           </div>
-          <div class="text-center text-sm">
-            <div class="w-10 text-white bg-green-300 rounded-lg px-0 py-2">${newsFeed[i].comments_count}</div>
-          </div>
         </div>
-        <div class="flex mt-3">
-          <div class="grid grid-cols-3 text-sm text-gray-500">
-            <div><i class="fas fa-user mr-1"></i>${newsFeed[i].user}</div>
-            <div><i class="fas fa-heart mr-1"></i>${newsFeed[i].points}</div>
-            <div><i class="far fa-clock mr-1"></i>${newsFeed[i].time_ago}</div>
+        <div class="flex mt-2">
+          <div class="grid grid-cols-4 text-sm text-gray-500">
+            <div class="mx-4"><i class="fas fa-user mr-1"></i>${newsFeed[i].user}</div>
+            <div class="mx-4"><i class="fas fa-heart mr-1"></i>${newsFeed[i].points}</div>
+            <div class="mx-4"><i class="far fa-clock mr-1"></i>${newsFeed[i].time_ago}</div>
+            <div class="mx-4"><i class="far fa-comment mr-1"></i>${newsFeed[i].comments_count}</div>
           </div>  
         </div>
       </div>    
@@ -89,7 +102,9 @@ function newsDetail() { // url의 #이 변할때
         <div class="mx-auto px-4">
           <div class="flex justify-between items-center py-6">
             <div class="flex justify-start">
-              <h1 class="font-extrabold">Hacker News</h1>
+              <h1 class="font-extrabold">
+              <a href="/">Hacker News</a>
+              </h1>
             </div>
             <div class="items-center justify-end">
               <a href="#/page/${store.currentPage}" class="text-gray-500">
@@ -110,6 +125,14 @@ function newsDetail() { // url의 #이 변할때
       </div>
     </div>
   `;
+  
+  // 읽었던 글의 UI를 바꿔주는 함수
+  for(let i=0; i < store.feeds.length; i++) {
+    if (store.feeds[i].id === Number(id)) {
+      store.feeds[i].read = true;
+      break;
+    }
+  }
 
   function makeComment(comments, called = 0) {
     const commentString = [];
