@@ -21,12 +21,22 @@ function getData(url) {
 // 배열에 ul,li태그를 넣고 join으로 문자열로 바꾸는 방식을 사용.
 function newsFeed() {
   const newsFeed = getData(NEWS_URL);
-  const newList = [];
+  const newsList = [];
+  let template = `
+    <div class="container mx-auto p-4">
+      <h1>Hacker News</h1>
+      <ul>
+        {{__news_feed__}}
+      </ul>
+      <div>
+        <a href="#/page/{{__prev_page__}}">이전 페이지</a>
+        <a href="#/page/{{__next_page__}}">다음 페이지</a>
+      </div>
+    </div>
+  `;
 
-  newList.push('<ul>');
-  
   for (let i = (store.currentPage - 1) * 10; i<store.currentPage * 10; i++) {
-    newList.push(`
+    newsList.push(`
     <li>
       <a href="#/show/${newsFeed[i].id}">
       ${newsFeed[i].title} (${newsFeed[i].comments_count})
@@ -34,16 +44,13 @@ function newsFeed() {
     </li>
     `);
   }
-  newList.push('</ul>')
-  newList.push(`
-    <div>
-      <a href="#/page/${store.currentPage > 1 ? store.currentPage - 1 : 1}">이전페이지</a>      
-      <a href="#/page/${store.currentPage + 1}">다음페이지</a>      
-    </div>
-  `);
+
+  template = template.replace('{{__news_feed__}}', newsList.join(''));
+  template = template.replace('{{__prev_page__}}', store.currentPage > 1 ? store.currentPage - 1 : 1);
+  template = template.replace('{{__next_page__}}', store.currentPage + 1); // 다음페이지가 없을때 페이지+1되는 버그는 스스로 잡아보기.
   
   // join : 배열을 ,로 연결된 하나의 문자열로 바꿔줌. 
-  container.innerHTML = newList.join('') ; // 빈문자열로 넣어주면 ,없이 문자열 연결.
+  container.innerHTML = template ; // 빈문자열로 넣어주면 ,없이 문자열 연결.
 };
 
 // 글목록 클릭했을때 글내용 보여주는 함수
